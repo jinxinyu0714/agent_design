@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Docker
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# CLIPasso outputs
+output_sketches/
+target_images/*
+*.svg
+*.png
+*.jpg
+*.jpeg
+*.pth
+./clippasso_utils/CLIPasso/U2Net_/saved_models/u2net.pth
+
+# Temporary files
+*.tmp
+*.bak
+
+# data
+cd_utils/data/stl_in/*
+cd_utils/*.pt
