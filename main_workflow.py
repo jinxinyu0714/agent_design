@@ -37,6 +37,7 @@ async def run_closed_loop(initial_task: str, max_iterations=3):
     excluded_models = []
     high_cd_dict = {}
     
+    success = False  # 保证 success 总是有定义
     while iteration < max_iterations:
         iteration += 1
         print(f"\n=== 迭代 {iteration} ===")
@@ -48,12 +49,14 @@ async def run_closed_loop(initial_task: str, max_iterations=3):
             models = await get_competitors(task_description)
         except Exception as e:
             print(f"获取竞品模型出错: {e}")
+            success = False
             break
-            
+        
         if not models:
             print("未找到模型。停止。")
+            success = False
             break
-            
+        
         print(f"找到模型: {models}")
         
         # Filter out already excluded models
@@ -63,7 +66,7 @@ async def run_closed_loop(initial_task: str, max_iterations=3):
             print("所有找到的模型均已排除。调整搜索...")
             task_description += " find different models"
             continue
-            
+        
         # Process each candidate
         success = False
         for model in candidates:
