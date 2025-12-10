@@ -5,10 +5,15 @@ import subprocess
 import os
 from typing import Dict, Any, Optional
 
+# 新增依赖
+try:
+    import cairosvg
+except ImportError:
+    cairosvg = None
 
 async def run_clippasso_sketching(
     image_name: str,
-    workspace_path: str = "/student/jxy/agent_design/clippasso_utils/CLIPasso",
+    workspace_path: str = "/home/j/桌面/agent_design/clippasso_utils/CLIPasso",
     container_name: str = "clippasso-env:py310-cuda",
     gpu_device: str = "0",
     num_strokes: int = 100,
@@ -58,23 +63,21 @@ async def run_clippasso_sketching(
     
     # 构建命令行参数
     cmd_args = f"--target_file {image_name} --num_strokes {num_strokes} --num_sketches {num_sketches}"
-    
     if mask_object == 1:
         cmd_args += " --mask_object 1"
     if fix_scale == 1:
         cmd_args += " --fix_scale 1"
     if use_cpu:
         cmd_args += " --cpu"
-    
+
     # 构建Docker命令
     docker_cmd = [
         "docker", "run"
     ]
-    
-    # 添加GPU支持（如果不使用CPU）
     if not use_cpu:
         docker_cmd.extend([f"--gpus=device={gpu_device}"])
-    
+        # 新增：让容器内文件属主和主机用户一致
+        docker_cmd.extend(["-u", f"{os.getuid()}:{os.getgid()}"])
     docker_cmd.extend([
         "--ipc=host",
         "-v", f"{workspace_path}:/home/CLIPasso",
@@ -88,38 +91,50 @@ async def run_clippasso_sketching(
         python run_object_sketching.py {cmd_args}
         """
     ])
-    
+
     try:
-        print(f"开始运行CLIPasso素描生成，目标图片: {image_name}")
-        print(f"使用容器: {container_name}")
-        print(f"工作空间: {workspace_path}")
-        print(f"命令参数: {cmd_args}")
-        print(f"使用{'CPU' if use_cpu else 'GPU'}模式")
-        
-        # 执行Docker命令
+        # print(f"开始运行CLIPasso素描生成，目标图片: {image_name}")
+        # print(f"使用容器: {container_name}")
+        # print(f"工作空间: {workspace_path}")
+        # print(f"命令参数: {cmd_args}")
+        # print(f"使用{'CPU' if use_cpu else 'GPU'}模式")
         process = await asyncio.create_subprocess_exec(
             *docker_cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             cwd=os.path.dirname(workspace_path)
         )
-        
-        # 等待执行完成
         stdout, stderr = await process.communicate()
-        
-        # 解码输出
         stdout_text = stdout.decode('utf-8', errors='ignore')
         stderr_text = stderr.decode('utf-8', errors='ignore')
-        
-        # 判断执行是否成功
         success = process.returncode == 0
-        
-        # 生成输出路径
+
         if num_sketches == 1:
             output_sketch_path = f"{workspace_path}/output_sketches/{name}/{name}_{num_strokes}strokes_seed0_best.svg"
         else:
             output_sketch_path = f"{workspace_path}/output_sketches/{name}/{name}_{num_strokes}strokes_best.svg"
-        
+
+        # 新增：SVG转PNG,white background
+        output_png_path = output_sketch_path.replace('.svg', '.png')
+        png_success = False
+        png_error = ""
+        if success and os.path.exists(output_sketch_path):
+            try:
+                if cairosvg is not None:
+                    cairosvg.svg2png(url=output_sketch_path, write_to=output_png_path, background_color='white')
+                    png_success = os.path.exists(output_png_path)
+                    if png_success:
+                        # print(f"SVG已转换为PNG: {output_png_path}")
+                        pass
+                    else:
+                        png_error = "PNG文件未生成"
+                else:
+                    png_error = "cairosvg未安装，无法转换SVG为PNG"
+            except Exception as e:
+                png_error = f"SVG转PNG失败: {e}"
+        else:
+            png_error = "SVG文件不存在，无法转换"
+
         result = {
             "success": success,
             "returncode": process.returncode,
@@ -128,6 +143,8 @@ async def run_clippasso_sketching(
             "image_name": image_name,
             "workspace_path": workspace_path,
             "output_sketch_path": output_sketch_path,
+            "output_png_path": output_png_path if png_success else None,
+            "png_error": png_error if not png_success else "",
             "parameters": {
                 "num_strokes": num_strokes,
                 "mask_object": mask_object,
@@ -136,16 +153,25 @@ async def run_clippasso_sketching(
                 "use_cpu": use_cpu
             }
         }
-        
+
+        # 用PNG路径替换output_sketch_path（如果PNG生成成功）
+        if png_success:
+            result["output_sketch_path"] = output_png_path
+
         if success:
-            print(f"CLIPasso执行成功!")
-            print(f"素描保存在: {output_sketch_path}")
+            # print(f"CLIPasso执行成功!")
+            # print(f"素描保存在: {output_sketch_path}")
+            if png_success:
+                # print(f"PNG图片保存在: {output_png_path}")
+                pass
+            else:
+                print(f"PNG转换失败: {png_error}")
         else:
             print(f"CLIPasso执行失败，返回码: {process.returncode}")
             print(f"错误信息: {stderr_text}")
-            
+
         return result
-        
+
     except Exception as e:
         error_msg = f"执行CLIPasso时发生错误: {str(e)}"
         print(error_msg)
@@ -155,13 +181,16 @@ async def run_clippasso_sketching(
             "output": "",
             "stderr": "",
             "image_name": image_name,
-            "workspace_path": workspace_path
+            "workspace_path": workspace_path,
+            "output_sketch_path": None,
+            "output_png_path": None,
+            "png_error": "异常终止"
         }
 
 
 def run_clippasso_sketching_sync(
     image_name: str,
-    workspace_path: str = "/student/jxy/agent_design/clippasso_utils/CLIPasso",
+    workspace_path: str = "/home/j/桌面/agent_design/clippasso_utils/CLIPasso",
     container_name: str = "clippasso-env:py310-cuda",
     gpu_device: str = "0",
     num_strokes: int = 100,
@@ -227,11 +256,11 @@ def run_clippasso_sketching_sync(
 
 # 测试函数
 async def test_clippasso_tool():
-    for name in ["neo.png", "mengshi.png", "benz.png"]:
+    for name in ["rongwei.png"]:
         for stroke in [10]:
             result = await run_clippasso_sketching(
                 image_name=name,
-                workspace_path="/student/jxy/easy_agent/analy/clippasso_utils/CLIPasso",
+                workspace_path="/home/j/桌面/agent_design/clippasso_utils/CLIPasso",
                 container_name="clippasso-env:py310-cuda",
                 gpu_device="0",
                 num_strokes=stroke,
@@ -245,4 +274,3 @@ async def test_clippasso_tool():
 if __name__ == "__main__":
     # 运行测试
     asyncio.run(test_clippasso_tool())
-

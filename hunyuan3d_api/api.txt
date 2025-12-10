@@ -1,0 +1,30 @@
+    # 使用环境变量获取密钥
+    secret_id = os.getenv("TENCENTCLOUD_SECRET_ID")
+    secret_key = os.getenv("TENCENTCLOUD_SECRET_KEY")
+
+
+
+export PATH="$PATH:/home/j/桌面/blender-4.5.3-linux-x64"
+python test_api.py --image /home/j/桌面/agent_design/hunyuan3d_api/2.png
+
+# 使用最新历史记录进行转换，结果放到output文件夹
+export PATH="$PATH:/home/j/桌面/blender-4.5.3-linux-x64"
+python test_conversion.py --history
+
+# 或手动自定义测试，结果放到temp文件夹
+export PATH="$PATH:/home/j/桌面/blender-4.5.3-linux-x64"
+python test_conversion.py --direct
+
+
+执行顺序：
+conda activate hunyuan-api
+export PATH="$PATH:/home/j/桌面/blender-4.5.3-linux-x64"
+python /home/j/桌面/agent_design/hunyuan3d_api/test_api.py --image /home/j/桌面/agent_design/hunyuan3d_api/test.png
+
+conda activate hunyuan-api
+export PATH="$PATH:/home/j/桌面/blender-4.5.3-linux-x64"
+python /home/j/桌面/agent_design/hunyuan3d_api/test_conversion.py --history
+
+conda activate hunyuan-api
+export PATH="$PATH:/home/j/桌面/blender-4.5.3-linux-x64"
+python /home/j/桌面/agent_design/hunyuan3d_api/test_api.py --image /home/j/桌面/agent_design/hunyuan3d_api/222.jpg

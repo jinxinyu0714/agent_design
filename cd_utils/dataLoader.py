@@ -172,32 +172,37 @@ def pc_normalize1(xyz, global_mean=None, global_std=None):
 
 #多stl测试
 class DrivAerDataset_stl4pre_random_cd(Dataset):
-    def __init__(self, data_dir, config, filename_list=None, transform=None, random_seed=42):
+    def __init__(self, data_dir=None, filename_list=None, transform=None, random_seed=42, use_csv_labels=True, csv_path=None):
         self.data_dir = data_dir
         self.transform = transform
         self.random_seed = random_seed
-        
-        # 设置随机种子
+        self.use_csv_labels = use_csv_labels
+
         set_random_seed(self.random_seed)
 
-        # 从配置文件加载原始 sample list（可选）
-        #self.data_list_file = config['paths'].get('split_path', None)
-        self.data_list_file = "/student/jxy/easy_agent/analy/cd_utils/data/DrivAer_model_TrainingData_100.csv"
-        # if self.data_list_file and os.path.exists(self.data_list_file):
-        #     self.sample_list = pd.read_csv(self.data_list_file)
-        
-        self.sample_list = pd.read_csv(self.data_list_file)
-
-        # 加载所有 STL 文件
-        all_stl_files = [f for f in os.listdir(data_dir) if f.endswith('.stl')]
-        if not all_stl_files:
-            raise ValueError(f"No STL files found in {data_dir}")
-
-        # 如果提供了文件名列表，则只保留这些文件
-        if filename_list is not None:
-            self.stl_files = [f for f in all_stl_files if f in filename_list]
+        self.sample_list = None
+        if self.use_csv_labels:
+            self.data_list_file = csv_path or "/student/jxy/easy_agent/analy/cd_utils/data/DrivAer_model_TrainingData_100.csv"
+            if not os.path.exists(self.data_list_file):
+                raise FileNotFoundError(f"CSV 文件未找到，但 use_csv_labels=True。请检查路径: {self.data_list_file}")
+            self.sample_list = pd.read_csv(self.data_list_file)
         else:
-            self.stl_files = all_stl_files
+            self.data_list_file = None
+
+        # 判断 data_dir 是否为空
+        if not self.data_dir:
+            # 如果 data_dir 为空，则 filename_list 必须提供，其中为文件的绝对路径
+            if not filename_list:
+                raise ValueError("当 data_dir 为空时，必须提供 filename_list，其中应包含 STL 文件的绝对路径。")
+            self.stl_files = filename_list
+        else:
+            all_stl_files = [f for f in os.listdir(data_dir) if f.endswith('.stl')]
+            if not all_stl_files:
+                raise ValueError(f"No STL files found in {data_dir}")
+            if filename_list is not None:
+                self.stl_files = [os.path.join(data_dir, f) if not os.path.isabs(f) else f for f in filename_list if f in all_stl_files or os.path.isabs(f)]
+            else:
+                self.stl_files = [os.path.join(data_dir, f) for f in all_stl_files]
 
     def __len__(self):
         return len(self.stl_files)
@@ -269,16 +274,16 @@ class DrivAerDataset_stl4pre_random_cd(Dataset):
         # 在每次获取项目时重新设置随机种子，确保一致性
         set_random_seed(self.random_seed + idx)
         
-        stl_filename = self.stl_files[idx]
-        stl_file_path = os.path.join(self.data_dir, stl_filename)
-    
+        stl_file_path = self.stl_files[idx]
+        stl_filename = os.path.basename(stl_file_path)
+        # ...后续逻辑保持不变，stl_file_path直接用...
         if not os.path.exists(stl_file_path):
-            print(f"Warning: STL file '{stl_filename}' not found in {self.data_dir}")
+            print(f"Warning: STL file '{stl_filename}' not found at {stl_file_path}")
             return self.__getitem__((idx + 1) % len(self))
-        
+
         vertices, cubesize = self.load_stl_with_normals_new(stl_file_path)
-        curvatures = self.compute_curvature(vertices) 
-        sampled_data = self.sample_points(vertices, curvatures,  sampled_points=20000)
+        curvatures = self.compute_curvature(vertices)
+        sampled_data = self.sample_points(vertices, curvatures, sampled_points=20000)
   
         xyzsize = np.array([
             [4, 1.8, 1],
@@ -300,6 +305,14 @@ class DrivAerDataset_stl4pre_random_cd(Dataset):
         sampled_data = torch.tensor(sampled_data, dtype=torch.float32)
 
         filename = os.path.splitext(stl_filename)[0]
+
+        # 推理场景：不使用 CSV 标签
+        if not self.use_csv_labels or self.sample_list is None:
+            # 不返回真实标签
+            dummy_label = torch.tensor([0.0], dtype=torch.float32)
+            return sampled_data[:, :3], cubesize, dummy_label, filename
+
+        # 训练/评估有标签场景
         matching_rows = self.sample_list[self.sample_list['ID'] == filename]
         if len(matching_rows) == 0:
             raise ValueError(f"未在 CSV 文件中找到 {filename} 的匹配条目。")
@@ -309,19 +322,8 @@ class DrivAerDataset_stl4pre_random_cd(Dataset):
         return sampled_data[:,:3], cubesize, label_data, filename
     
     def process_stl_file(self, stl_filename):
-        """
-        通过输入STL文件名，返回处理后的数据
-        
-        Args:
-            stl_filename (str): STL文件名（带.stl扩展名）
-            
-        Returns:
-            tuple: (sampled_data[:,:3], cubesize, label_data, filename)
-        """
-        # 为单个文件处理设置随机种子
         set_random_seed(self.random_seed)
-        
-        stl_file_path = os.path.join(self.data_dir, stl_filename)
+        stl_file_path = stl_filename if os.path.isabs(stl_filename) or not self.data_dir else os.path.join(self.data_dir, stl_filename)
     
         if not os.path.exists(stl_file_path):
             raise FileNotFoundError(f"STL file '{stl_filename}' not found in {self.data_dir}")
@@ -353,10 +355,50 @@ class DrivAerDataset_stl4pre_random_cd(Dataset):
         sampled_data = torch.tensor(sampled_data, dtype=torch.float32)
     
         filename = os.path.splitext(stl_filename)[0]
+
+        # 若不使用 CSV，则仅返回特征与文件名（label 返回一个占位符，调用方可忽略）
+        if not self.use_csv_labels or self.sample_list is None:
+            dummy_label = torch.tensor([0.0], dtype=torch.float32)
+            return sampled_data[:, :3], cubesize, dummy_label, filename
+
+        # 使用 CSV 标签的情况
         matching_rows = self.sample_list[self.sample_list['ID'] == filename]
         if len(matching_rows) == 0:
             raise ValueError(f"未在 CSV 文件中找到 {filename} 的匹配条目。")
         label_data = matching_rows['Drag_Value'].values[0]
         label_data = torch.tensor([label_data], dtype=torch.float32)
-    
+
         return sampled_data[:,:3], cubesize, label_data, filename
+
+    def process_stl_file_no_label(self, stl_filename):
+        set_random_seed(self.random_seed)
+        stl_file_path = stl_filename if os.path.isabs(stl_filename) or not self.data_dir else os.path.join(self.data_dir, stl_filename)
+        if not os.path.exists(stl_file_path):
+            raise FileNotFoundError(f"STL file '{stl_filename}' not found in {self.data_dir}")
+
+        vertices, cubesize = self.load_stl_with_normals_new(stl_file_path)
+        if vertices is None or cubesize is None:
+            raise ValueError(f"Failed to load STL file: {stl_filename}")
+
+        curvatures = self.compute_curvature(vertices)
+        sampled_data = self.sample_points(vertices, curvatures, sampled_points=20000)
+
+        xyzsize = np.array([
+            [4, 1.8, 1],
+            [6, 2.6, 2]
+        ], dtype=np.float32)
+
+        # 归一化边界尺寸到 [-1, 1]
+        min_vals = xyzsize.min(axis=0)
+        max_vals = xyzsize.max(axis=0)
+        cubesize = 2 * (cubesize - min_vals) / (max_vals - min_vals) - 1
+        cubesize = cubesize.astype(np.float32)
+        N, C = sampled_data.shape
+        cubesize = torch.tensor(cubesize)
+        cubesize = cubesize.unsqueeze(0).repeat(N, 1)
+
+        sampled_data[:, :3] = self.pc_norm(sampled_data[:, :3])
+        sampled_data = torch.tensor(sampled_data, dtype=torch.float32)
+
+        filename = os.path.splitext(stl_filename)[0]
+        return sampled_data[:, :3], cubesize, filename

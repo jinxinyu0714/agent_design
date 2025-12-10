@@ -1,19 +1,13 @@
 """
 汽车设计分析智能体定义
 """
-import os
-import asyncio
-import requests
 from pathlib import Path
-from typing import List, Dict, Any 
 from config import config
 from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from autogen_core.tools import FunctionTool
-from autogen_ext.tools.mcp import McpWorkbench, StdioServerParams, mcp_server_tools
+from autogen_ext.tools.mcp import StdioServerParams, mcp_server_tools
 from utils.cli_research import web_deep_research
-from utils.fetch_webpage import fetch_webpage_tool
-from utils.google_search import google_search_tool
 from clippasso_utils.clippasso_tool import run_clippasso_sketching_sync
 from cd_utils.pipeline import evaluate_cd_value
 
@@ -68,21 +62,20 @@ def get_model_client():
         api_key=config.MODEL_API_KEY,
         base_url=config.MODEL_BASE_URL,
         model_info={
-            "json_output": False,
+            "json_output": True,
             "function_calling": True,
             "vision": False,
-            "family": "unknown",
+            "family": "DeepSeek",
             "structured_output": False,
         },
     )
 
-# def get_model_client():
-#     """获取模型客户端"""
-#     return OpenAIChatCompletionClient(
-#         model=config.OPENAI_MODEL_NAME,
-#         api_key=config.OPENAI_API_KEY,
-#     )
-
+def get_openai_model_client():
+    """获取模型客户端"""
+    return OpenAIChatCompletionClient(
+        model=config.OPENAI_MODEL_NAME,
+        api_key=config.OPENAI_API_KEY,
+    )
 
 
 async def create_design_analyst(client):
@@ -164,22 +157,20 @@ def _get_file_system_params() -> StdioServerParams:
         args=[
             "-y",
             "@modelcontextprotocol/server-filesystem",
-            "/student/jxy/agent_design/automotive_output"  # 修正路径
+            str(config.OUTPUT_DIR)
         ],
         read_timeout_seconds=30,
     )
 
 def _get_sketch_file_system_params() -> StdioServerParams:
     """获取文件系统MCP服务器参数"""
-    # 使用当前工作目录，而不是输出目录
-    current_dir = Path.cwd()
     return StdioServerParams(
         command="npx",
         args=[
             "-y",
             "@modelcontextprotocol/server-filesystem",
-            "/student/jxy/agent_design/clippasso_utils/CLIPasso/target_images",
-            "/student/jxy/agent_design/clippasso_utils/CLIPasso",
+            str(config.CLIPPASSO_TARGET_IMAGES_DIR),
+            str(config.CLIPPASSO_DIR),
         ],
         read_timeout_seconds=30,
     )
