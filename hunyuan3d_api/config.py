@@ -3,6 +3,10 @@ import os
 import platform
 from typing import Optional
 from enum import Enum
+from dotenv import load_dotenv
+
+# 加载.env文件
+load_dotenv()
 
 class APIMode(Enum):
     """API模式枚举"""
@@ -82,7 +86,7 @@ class Config:
     
     BLENDER_PATH = None  # 将在初始化时设置
     
-    # 密钥配置 - 必须通过环境变量设置
+    # 密钥配置
     SECRET_ID = os.getenv("TENCENTCLOUD_SECRET_ID")
     SECRET_KEY = os.getenv("TENCENTCLOUD_SECRET_KEY")
     

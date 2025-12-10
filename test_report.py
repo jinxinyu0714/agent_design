@@ -1,15 +1,14 @@
 import os
 import argparse
 from autogen_agentchat.agents import AssistantAgent, MessageFilterAgent, MessageFilterConfig, PerSourceFilter
-# API keys should be set via environment variables or .env file
-from agents import create_design_analyst, get_model_client, create_report_saver, create_competitor_analyst
+from agents import create_design_analyst, get_model_client, get_openai_model_client, create_report_saver, create_competitor_analyst
 from agents import initialize_file_tools
 import asyncio
 from autogen_agentchat.teams import DiGraphBuilder, GraphFlow
-from autogen_agentchat.ui import Console
 import re
 import requests
 import json
+
 
 
 # 使用--task参数传入任务描述
@@ -94,7 +93,7 @@ def save_all_images(content, folder_name):
 
 async def main(task):
     for i in range(3):
-        client = get_model_client()
+        client = get_openai_model_client()
 
         DesignAnalyst = await create_design_analyst(client)
         ReportSaver = await create_report_saver(client)

@@ -1,11 +1,12 @@
 import asyncio
 import argparse
+import dotenv
+dotenv.load_dotenv()
 from autogen_core.tools import FunctionTool
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.ui import Console
 import os
 import re
-os.environ['GEMINI_API_KEY'] = "AIzaSyA12-2shZJdz0BYLRs-7vHIjIlwuN3Xd3M"
 from agents import create_design_analyst, get_model_client, create_report_saver, create_competitor_analyst, create_seketching_agent, create_cd_value_agent
 from agents import initialize_sketch_file_tools, _get_sketch_file_system_params, get_clippasso_tool
 from cd_utils.pipeline import predict_cd_value, print_multiple_prediction_results

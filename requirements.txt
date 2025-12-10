@@ -1,3 +1,4 @@
+python-dotenv
 autogen-agentchat
 autogen-ext[openai]
 autogen-ext[ollama]

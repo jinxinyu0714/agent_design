@@ -3,6 +3,8 @@
 """
 import os
 from pathlib import Path
+import dotenv
+dotenv.load_dotenv()
 
 
 class Config:
@@ -21,7 +23,12 @@ class Config:
     GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID", "")
     
     # 输出配置
-    OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "/home/j/桌面/agent_design/automotive_output"))
+    BASE_DIR = Path(os.getenv("BASE_DIR"))
+    OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR"))
+    
+    # CLIPasso路径配置
+    CLIPPASSO_DIR = Path(os.getenv("CLIPPASSO_DIR"))
+    CLIPPASSO_TARGET_IMAGES_DIR = Path(os.getenv("CLIPPASSO_TARGET_IMAGES_DIR"))
   
     
     # 搜索配置

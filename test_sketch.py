@@ -1,7 +1,8 @@
 import os
 import argparse
+import dotenv
+dotenv.load_dotenv()
 from autogen_agentchat.agents import AssistantAgent, MessageFilterAgent, MessageFilterConfig, PerSourceFilter
-os.environ['GEMINI_API_KEY'] = "AIzaSyA12-2shZJdz0BYLRs-7vHIjIlwuN3Xd3M"
 from agents import get_model_client, create_seketching_agent, get_openai_model_client
 import asyncio
 from autogen_agentchat.ui import Console
