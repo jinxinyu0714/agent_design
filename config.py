@@ -9,19 +9,19 @@ class Config:
     """系统配置类"""
     
     # 模型配置
-    MODEL_NAME = "qwen3:latest"
-    MODEL_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
-    MODEL_BASE_URL = "http://localhost:11434/v1"
+    MODEL_NAME = "deepseek-chat"
+    MODEL_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+    MODEL_BASE_URL = "https://api.deepseek.com"
     
     OPENAI_MODEL_NAME = "gpt-4o"
-    OPENAI_API_KEY = ""
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
     # Google搜索配置
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
     GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID", "")
     
     # 输出配置
-    OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "/Users/jinxinyu/Desktop/资料/easy_agent/analy/automotive_output"))
+    OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "/home/j/桌面/agent_design/automotive_output"))
   
     
     # 搜索配置

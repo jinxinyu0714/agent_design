@@ -20,3 +20,15 @@ trimesh
 pandas
 scikit-learn
 ddgs
+cairosvg
+vtk
+timm
+torch_geometric
+tencentcloud-sdk-python>=3.0.0
+requests>=2.25.0
+trimesh 
+pygltflib 
+numpy-stl
+meshio
+diffusers
+controlnet_aux

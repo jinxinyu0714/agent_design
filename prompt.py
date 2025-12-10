@@ -5,17 +5,23 @@ analyst_prompt = """
 - 根据用户输入的需求（例如：我想要一个运动点的SUV，希望外观看起来比较有攻击性，价格在30-50万之间），调用 web_deep_research 工具进行网络搜索以实现竞品分析。
 - 分析 web_deep_research 返回的内容，提取竞品车型信息。
 
+
+语言格式：
+- 使用中文,如果内容不是中文，就翻译为中文。
+
+
 输出格式：
 - 将您的回复格式化为一个JSON对象，包含以下精确的键：
    - "requirement"：用户输入的需求。
-   - "research_result"：深度研究工具返回的内容。
+   - "research_result"：深度研究工具返回的内容， 其中要包含相应的车型， 包含该车型的特点。
 
 示例：
 
 ```json
 {{
     "requirement": "我想要一个运动点的SUV，希望外观看起来比较有攻击性，价格在30-50万之间。",
-    "research_result": "The latest news in Artificial Intelligence (AI) for July 2025 highlights significant advancements in AI governance, model breakthroughs, diverse applications, evolving industry trends, and critical discussions around AI risks and ethics.\n\n### AI Governance and Ethics\n\nGlobal efforts are intensifying to establish ethical frameworks and governance for AI. The Digital Cooperation Organization (DCO) launched its AI Ethics Evaluator Policy Tool at the AI for Good Summit 2025 and the World Summit on the Information Society (WSIS+20) in Geneva. This tool assists developers and users in assessing the ethical implications and human rights risks of AI systems through a structured self-assessment [dco](https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEJDh57Tr-QvSfZ6ULpGcCnNJ-V-wASndqtvasAfxS6IZJq59QIJ3hMLjwMnBmDM3RqU7MQ2V-ki94x1ROh7qgFb6hhxjBsF-ltLWrFhG9MBJT9DVC4Zqq6F6AzbsHDYfFwWgN8c9HpBqyOM_qk9Gw5w-UldbxaYMBfDdr1HLZ7QNtqrDRHEkLKfO_IDwcx-kV8MAHDhmDeZhfV44I0dSKcSia-a4Q_peoy2Z12iktcfSVEo8lJ22kKbsYD5-JHfsBet0oDTkMj4KY5ClkWLqYLY3k=). ",
+    "research_result": **特斯拉Model Y**：售价在263,900至363,900元之间，Model Y是电动车领域的热门选择。它配备双电机全轮驱动系统，续航里程可达615公里，深受城市中技术敏感型消费者的青睐，尤其是在充电基础设施完善的地区。[来源](https://www.ithome.com/0/871/985.htm)
+",
 }}
 ```
 按照此 JSON 格式提供您的输出
@@ -36,6 +42,10 @@ CRITICAL: 您必须总是调用 write_file 工具来保存文件，永远不要�
 工具调用要求：
 - 使用路径格式：automotive_output/文件名.txt
 - 示例：automotive_output/mpv_report_2025.txt
+
+语言格式：
+- 使用中文,如果内容不是中文，就翻译为中文。
+
 
 如果工具调用成功，返回：
 ```json
@@ -70,6 +80,10 @@ get_car_list_prompt = """
 3. 提取完整且准确的车型名称
 4. 将提取的车型名称保存为JSON格式
 
+语言格式：
+- 车型使用中文,如果内容不是中文，就翻译为中文。
+
+
 输出格式：
 ```json
 {"extracted_vehicle_models": ["比亚迪唐DM-i", "理想L8", "蔚来ES6"]}
@@ -91,8 +105,9 @@ sketch_gen_prompt = """您是一位专业的素描生成助手，将汽车图片
 工作流程：
 1. 接收用户输入的车型名称列表
 2. 根据车型名称匹配相关的图片文件名
-3. 对找到的每个图片文件使用CLIPasso工具生成素描, 每一个图片文件生成一张素描
-4. 返回所有生成的素描结果，用于后续处理或保存
+3. 如果找不到对应的图片文件，查找可访问图片的文件名，使用相似车型名称进行模糊匹配
+4. 对找到的每个图片文件使用CLIPasso工具生成素描, 每一个图片文件生成一张素描，仔细确认对应的图片文件名
+5. 返回所有生成的素描结果，用于后续处理或保存
 
 
 

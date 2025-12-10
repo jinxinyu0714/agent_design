@@ -68,21 +68,20 @@ def get_model_client():
         api_key=config.MODEL_API_KEY,
         base_url=config.MODEL_BASE_URL,
         model_info={
-            "json_output": False,
+            "json_output": True,
             "function_calling": True,
             "vision": False,
-            "family": "unknown",
+            "family": "DeepSeek",
             "structured_output": False,
         },
     )
 
-# def get_model_client():
-#     """获取模型客户端"""
-#     return OpenAIChatCompletionClient(
-#         model=config.OPENAI_MODEL_NAME,
-#         api_key=config.OPENAI_API_KEY,
-#     )
-
+def get_openai_model_client():
+    """获取模型客户端"""
+    return OpenAIChatCompletionClient(
+        model=config.OPENAI_MODEL_NAME,
+        api_key=config.OPENAI_API_KEY,
+    )
 
 
 async def create_design_analyst(client):
@@ -164,7 +163,7 @@ def _get_file_system_params() -> StdioServerParams:
         args=[
             "-y",
             "@modelcontextprotocol/server-filesystem",
-            "/student/jxy/agent_design/automotive_output"  # 修正路径
+            "/home/j/桌面/agent_design/automotive_output"  # 修正路径
         ],
         read_timeout_seconds=30,
     )
@@ -178,8 +177,8 @@ def _get_sketch_file_system_params() -> StdioServerParams:
         args=[
             "-y",
             "@modelcontextprotocol/server-filesystem",
-            "/student/jxy/agent_design/clippasso_utils/CLIPasso/target_images",
-            "/student/jxy/agent_design/clippasso_utils/CLIPasso",
+            "/home/j/桌面/agent_design/clippasso_utils/CLIPasso/target_images",
+            "/home/j/桌面/agent_design/clippasso_utils/CLIPasso",
         ],
         read_timeout_seconds=30,
     )
