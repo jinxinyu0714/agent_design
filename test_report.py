@@ -93,7 +93,7 @@ def save_all_images(content, folder_name):
 
 async def main(task):
     for i in range(3):
-        client = get_openai_model_client()
+        client = get_model_client()
 
         DesignAnalyst = await create_design_analyst(client)
         ReportSaver = await create_report_saver(client)
