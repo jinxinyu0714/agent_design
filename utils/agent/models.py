@@ -44,6 +44,18 @@ def get_llm(model_name: str, provider: str, **kwargs) -> Any:
             api_key=api_key,
             **kwargs
         )
+    elif provider == "deepseek":
+        api_key = os.getenv("DEEPSEEK_API_KEY")
+        base_url = os.getenv("MODEL_BASE_URL", "https://api.deepseek.com")
+        if not api_key:
+            raise ValueError("DEEPSEEK_API_KEY is not set")
+
+        return ChatOpenAI(
+            model=model_name,
+            api_key=api_key,
+            base_url=base_url,
+            **kwargs
+        )
 
     elif provider == "azure_openai":
         # Required Azure OpenAI environment variables

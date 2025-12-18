@@ -159,7 +159,7 @@ def _get_file_system_params() -> StdioServerParams:
             "@modelcontextprotocol/server-filesystem",
             str(config.OUTPUT_DIR)
         ],
-        read_timeout_seconds=30,
+        read_timeout_seconds=120,
     )
 
 def _get_sketch_file_system_params() -> StdioServerParams:
@@ -172,7 +172,7 @@ def _get_sketch_file_system_params() -> StdioServerParams:
             str(config.CLIPPASSO_TARGET_IMAGES_DIR),
             str(config.CLIPPASSO_DIR),
         ],
-        read_timeout_seconds=30,
+        read_timeout_seconds=120,
     )
 async def initialize_file_tools():
     file_system_params = _get_file_system_params()
@@ -197,7 +197,7 @@ def _get_img_save_params() -> StdioServerParams:
             "DEFAULT_COMPRESS": "false",
             "DEFAULT_CONCURRENCY": "3",
         },
-        read_timeout_seconds=30,
+        read_timeout_seconds=120,
     )
 
 # async def initialize_web_tools():

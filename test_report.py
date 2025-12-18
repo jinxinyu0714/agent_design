@@ -1,7 +1,7 @@
 import os
 import argparse
 from autogen_agentchat.agents import AssistantAgent, MessageFilterAgent, MessageFilterConfig, PerSourceFilter
-from agents import create_design_analyst, get_model_client, get_openai_model_client, create_report_saver, create_competitor_analyst
+from agents import create_design_analyst, get_model_client, create_report_saver, create_competitor_analyst
 from agents import initialize_file_tools
 import asyncio
 from autogen_agentchat.teams import DiGraphBuilder, GraphFlow

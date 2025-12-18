@@ -84,7 +84,7 @@ async def run_closed_loop(initial_task: str, max_iterations=3):
             if not sketch_path or not os.path.exists(sketch_path):
                 # Fallback if sketch generation fails or returns None (mocking behavior from test_sketch.py)
                 print("草图生成返回为空或路径无效，使用备用示例路径（如可用）。")
-                sketch_path = "/Volumes/HP P900/agent_design/clippasso_utils/CLIPasso/output_sketches/理想L7/理想L7_100strokes_seed0_best.png"
+                sketch_path = "/home/j/桌面/agent_design/clippasso_utils/CLIPasso/output_sketches/理想MEGA/理想MEGA_100strokes_seed0_best.png"
             
             print(f"草图路径: {sketch_path}")
 

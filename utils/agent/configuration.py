@@ -8,15 +8,15 @@ from langchain_core.runnables import RunnableConfig
 class Configuration(BaseModel):
     """The configuration for the agent."""
 
-    provider: Literal["gemini", "openai", "azure_openai", "anthropic", "ollama"] = Field(
-        default="gemini",
+    provider: Literal["gemini", "openai", "azure_openai", "anthropic", "ollama", "deepseek"] = Field(
+        default="deepseek",
         metadata={
-            "description": "The provider for the agent's language models (gemini, openai, azure_openai, anthropic, or ollama)."
+            "description": "The provider for the agent's language models (gemini, openai, azure_openai, anthropic, ollama, or deepseek)."
         },
     )
 
     reasoning_model: str = Field(
-        default="gemini-2.5-flash-preview-04-17",
+        default="deepseek-chat",
         metadata={
             "description": "The name of the language model to use for the agent's reasoning."
         },
