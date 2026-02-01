@@ -11,7 +11,7 @@ from utils.cli_research import web_deep_research
 from clippasso_utils.clippasso_tool import run_clippasso_sketching_sync
 from cd_utils.pipeline import evaluate_cd_value
 
-from prompt import (analyst_prompt, file_saver_prompt, get_car_list_prompt, sketch_gen_prompt, cd_value_prompt)
+from prompt import (analyst_prompt, file_saver_prompt, get_car_list_prompt, sketch_gen_prompt, cd_value_prompt, INTENT_ANALYSE)
 
 
 async def get_deep_research_tool():
@@ -77,6 +77,15 @@ def get_openai_model_client():
         api_key=config.OPENAI_API_KEY,
     )
 
+async def create_intent_understander(client):
+    """创建设计意图理解智能体"""
+    return AssistantAgent(
+        name="IntentUnderstander",
+        description="汽车设计意图理解专家，您的目标是根据用户输入panduan。",
+        model_client=client,
+        tools=[],
+        system_message=INTENT_ANALYSE,
+    )
 
 async def create_design_analyst(client):
     """创建汽车设计需求分析智能体"""
@@ -159,7 +168,7 @@ def _get_file_system_params() -> StdioServerParams:
             "@modelcontextprotocol/server-filesystem",
             str(config.OUTPUT_DIR)
         ],
-        read_timeout_seconds=30,
+        read_timeout_seconds=120,
     )
 
 def _get_sketch_file_system_params() -> StdioServerParams:
@@ -172,7 +181,7 @@ def _get_sketch_file_system_params() -> StdioServerParams:
             str(config.CLIPPASSO_TARGET_IMAGES_DIR),
             str(config.CLIPPASSO_DIR),
         ],
-        read_timeout_seconds=30,
+        read_timeout_seconds=120,
     )
 async def initialize_file_tools():
     file_system_params = _get_file_system_params()
@@ -197,7 +206,7 @@ def _get_img_save_params() -> StdioServerParams:
             "DEFAULT_COMPRESS": "false",
             "DEFAULT_CONCURRENCY": "3",
         },
-        read_timeout_seconds=30,
+        read_timeout_seconds=120,
     )
 
 # async def initialize_web_tools():

@@ -10,14 +10,14 @@ async def web_deep_research_async(question: str):
         "messages": [HumanMessage(content=question)],
         "initial_search_query_count": 10,
         "max_research_loops": 5,
-        "reasoning_model": "gpt-4o",
-        "provider": "openai", 
+        "reasoning_model": "deepseek-chat",
+        "provider": "deepseek", 
     }
 
     config = RunnableConfig(
         configurable={
-            "provider": "openai",
-            "reasoning_model": "gpt-4o",
+            "provider": "deepseek",
+            "reasoning_model": "deepseek-chat",
         }
     )
     

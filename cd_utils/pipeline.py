@@ -141,7 +141,7 @@ def predict_multiple_stl(stl_filenames: List[str], model_path: str, data_dir: st
             # if pred > 0.4:
             #     pred = np.random.uniform(0.28, 0.36)
             all_results.append({
-                'filename': filename,
+                'file_name': filename,
                 'predicted_value': pred,
                 'inference_time': inf_t
             })

@@ -22,7 +22,7 @@ def ensure_directory_permissions(path):
 
 
 async def main(task):
-    client = get_openai_model_client()
+    client = get_model_client()
     sketch_agent = await create_seketching_agent(client)
     output = ""
     async for msg in sketch_agent.run_stream(task=task):
@@ -35,7 +35,7 @@ async def main(task):
         ensure_directory_permissions(sketch_path)
         return sketch_path
     #return None
-    print("/home/j/桌面/agent_design/clippasso_utils/CLIPasso/output_sketches/理想L7/理想L7_100strokes_seed0_best.png")
+    print("/home/j/桌面/agent_design/clippasso_utils/CLIPasso/output_sketches/理想MEGA/理想MEGA_100strokes_seed0_best.png")
 
 
 if __name__ == "__main__":
