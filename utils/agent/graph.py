@@ -3,6 +3,7 @@ import os
 from utils.agent.tools_and_schemas import SearchQueryList, Reflection
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage
+from langchain_core.output_parsers import JsonOutputParser
 from langgraph.types import Send
 from langgraph.graph import StateGraph
 from langgraph.graph import START, END
@@ -74,7 +75,12 @@ def generate_query(state: OverallState, config: RunnableConfig) -> QueryGenerati
         temperature=1.0,
         max_retries=2,
     )
-    structured_llm = llm.with_structured_output(SearchQueryList)
+    
+    if provider == "deepseek":
+        parser = JsonOutputParser(pydantic_object=SearchQueryList)
+        structured_llm = llm | parser
+    else:
+        structured_llm = llm.with_structured_output(SearchQueryList)
 
     # Format the prompt
     current_date = get_current_date()
@@ -85,7 +91,13 @@ def generate_query(state: OverallState, config: RunnableConfig) -> QueryGenerati
     )
     # Generate the search queries
     result = structured_llm.invoke(formatted_prompt)
-    return {"query_list": result.query}
+    
+    if isinstance(result, dict):
+        queries = result.get("query", [])
+    else:
+        queries = result.query
+        
+    return {"query_list": queries}
 
 
 def continue_to_web_research(state: QueryGenerationState):
@@ -213,15 +225,30 @@ def reflection(state: OverallState, config: RunnableConfig) -> ReflectionState:
         temperature=1.0,
         max_retries=2,
     )
-    result = llm.with_structured_output(Reflection).invoke(formatted_prompt)
+    
+    if provider == "deepseek":
+        parser = JsonOutputParser(pydantic_object=Reflection)
+        structured_llm = llm | parser
+        result = structured_llm.invoke(formatted_prompt)
+        
+        # Handle dict result
+        return {
+            "is_sufficient": result.get("is_sufficient"),
+            "knowledge_gap": result.get("knowledge_gap"),
+            "follow_up_queries": result.get("follow_up_queries", []),
+            "research_loop_count": state["research_loop_count"],
+            "number_of_ran_queries": len(state["search_query"]),
+        }
+    else:
+        result = llm.with_structured_output(Reflection).invoke(formatted_prompt)
 
-    return {
-        "is_sufficient": result.is_sufficient,
-        "knowledge_gap": result.knowledge_gap,
-        "follow_up_queries": result.follow_up_queries,
-        "research_loop_count": state["research_loop_count"],
-        "number_of_ran_queries": len(state["search_query"]),
-    }
+        return {
+            "is_sufficient": result.is_sufficient,
+            "knowledge_gap": result.knowledge_gap,
+            "follow_up_queries": result.follow_up_queries,
+            "research_loop_count": state["research_loop_count"],
+            "number_of_ran_queries": len(state["search_query"]),
+        }
 
 
 def evaluate_research(

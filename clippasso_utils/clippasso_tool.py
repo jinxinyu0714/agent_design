@@ -13,7 +13,7 @@ except ImportError:
 
 async def run_clippasso_sketching(
     image_name: str,
-    workspace_path: str = "/home/j/桌面/agent_design/clippasso_utils/CLIPasso",
+    workspace_path: str = "/home/j/桌面/agent_design/clippasso_utils_test/CLIPasso",
     container_name: str = "clippasso-env:py310-cuda",
     gpu_device: str = "0",
     num_strokes: int = 100,
@@ -58,7 +58,14 @@ async def run_clippasso_sketching(
             "output": "",
             "stderr": ""
         }
-    
+    print(f"工作空间路径存在: {workspace_path}")
+    print(f"目标图片文件: {image_name}")
+    print(f"使用容器镜像: {container_name}")
+    print(f"GPU设备: {gpu_device if not use_cpu else 'CPU模式'}")
+    print(f"素描笔画数量: {num_strokes}")
+    print(f"遮罩背景: {'是' if mask_object == 1 else '否'}")
+    print(f"修复比例: {'是' if fix_scale == 1 else '否'}")
+    print(f"生成素描数量: {num_sketches}")
 
     
     # 构建命令行参数
@@ -93,11 +100,11 @@ async def run_clippasso_sketching(
     ])
 
     try:
-        # print(f"开始运行CLIPasso素描生成，目标图片: {image_name}")
-        # print(f"使用容器: {container_name}")
-        # print(f"工作空间: {workspace_path}")
-        # print(f"命令参数: {cmd_args}")
-        # print(f"使用{'CPU' if use_cpu else 'GPU'}模式")
+        print(f"开始运行CLIPasso素描生成，目标图片: {image_name}")
+        print(f"使用容器: {container_name}")
+        print(f"工作空间: {workspace_path}")
+        print(f"命令参数: {cmd_args}")
+        print(f"使用{'CPU' if use_cpu else 'GPU'}模式")
         process = await asyncio.create_subprocess_exec(
             *docker_cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -190,7 +197,7 @@ async def run_clippasso_sketching(
 
 def run_clippasso_sketching_sync(
     image_name: str,
-    workspace_path: str = "/home/j/桌面/agent_design/clippasso_utils/CLIPasso",
+    workspace_path: str = "/home/j/桌面/agent_design/clippasso_utils_test/CLIPasso",
     container_name: str = "clippasso-env:py310-cuda",
     gpu_device: str = "0",
     num_strokes: int = 100,
@@ -256,11 +263,11 @@ def run_clippasso_sketching_sync(
 
 # 测试函数
 async def test_clippasso_tool():
-    for name in ["rongwei.png"]:
+    for name in ["奥迪A4L.jpg"]:
         for stroke in [10]:
             result = await run_clippasso_sketching(
                 image_name=name,
-                workspace_path="/home/j/桌面/agent_design/clippasso_utils/CLIPasso",
+                workspace_path="/home/j/桌面/agent_design_test/clippasso_utils/CLIPasso",
                 container_name="clippasso-env:py310-cuda",
                 gpu_device="0",
                 num_strokes=stroke,

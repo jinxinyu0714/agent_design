@@ -33,3 +33,5 @@ numpy-stl
 meshio
 diffusers
 controlnet_aux
+streamlit
+mediapipe

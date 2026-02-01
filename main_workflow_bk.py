@@ -2,79 +2,34 @@ import asyncio
 import os
 import sys
 import argparse
-import shutil
+import subprocess
 import random
-import json
-from pathlib import Path
-from typing import List, Dict, Any
+from typing import List
 
 # Add current directory to sys.path to ensure imports work
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from config import config
-from agents import create_intent_understander, get_model_client
-
-# Import workflow components
+# Import functions from existing modules
+# Note: We need to handle the fact that these modules might have their own argument parsers
+# if we import them directly. Ideally, we import the functions we need.
 from test_report import main as get_competitors
-from test_sketch import main as generate_sketch_agent
+from test_sketch import main as generate_sketch
 from cd_utils.pipeline import predict_cd_value
 from hunyuan3d_api.test_api import main as generate_3d_model
 from render_utils.controlnet import generate_rendering
-from clippasso_utils.clippasso_tool import run_clippasso_sketching
 
-# --- Intent Classification ---
-async def classify_intent(user_query: str, has_file: bool) -> Dict[str, Any]:
-    """
-    使用 IntentUnderstander 智能体对用户意图进行分类。
+async def run_closed_loop(initial_task: str, max_iterations=3):
+    task_description = initial_task
     
-    Args:
-        user_query: 用户的自然语言输入
-        has_file: 是否提供了文件
-        
-    Returns:
-        Dict: 包含 'intent' (意图代码), 'extracted_prompt' (提取的关键信息), 'reason' (推理理由) 的字典
-    """
-    client = get_model_client()
-    agent = await create_intent_understander(client)
-    
-    context = f"Query: {user_query}\nHas File: {has_file}"
-    try:
-        # Run the agent with the context
-        response = await agent.run(task=context)
-        
-        # Extract JSON from the last message
-        content = response.messages[-1].content
-        
-        # Clean up markdown code blocks if present
-        if "```json" in content:
-            content = content.split("```json")[1].split("```")[0].strip()
-        elif "```" in content:
-             content = content.split("```")[1].split("```")[0].strip()
-             
-        return json.loads(content)
-    except Exception as e:
-        print(f"Error parsing intent: {e}")
-        return None
-
-# --- Workflow Execution Functions ---
-async def execute_param_design_loop(task_description: str):
-    """
-    Case 1 & 5 (COMPETITOR_ANALYSIS / DESIGN_LOOP): 
-    执行闭环设计工作流：竞品分析 -> 草图生成 -> 渲染图 -> 3D模型 -> CD预测。
-    此函数处理纯文本需求。
-    
-    Args:
-        task_description: 用户的设计需求描述 (例如: "设计一款运动型SUV")
-    """
-    print(f"Executing Full Design Loop for: {task_description}")
-    
-    # Existing logic from main_workflow.py adapted here
+    # Determine threshold based on task description
     if "SUV" in task_description.upper():
         cd_threshold = 0.4
+        vehicle_type = "SUV"
     else:
         cd_threshold = 0.35
+        vehicle_type = "sedan"
         
-    print(f"目标 Cd <= {cd_threshold}")
+    print(f"开始闭环工作流程：{vehicle_type}。目标 Cd <= {cd_threshold}")
     
     max_iterations = max_iterations
     iteration = 0
@@ -129,7 +84,7 @@ async def execute_param_design_loop(task_description: str):
             if not sketch_path or not os.path.exists(sketch_path):
                 # Fallback if sketch generation fails or returns None (mocking behavior from test_sketch.py)
                 print("草图生成返回为空或路径无效，使用备用示例路径（如可用）。")
-                sketch_path = "/Volumes/HP P900/agent_design/clippasso_utils/CLIPasso/output_sketches/理想L7/理想L7_100strokes_seed0_best.png"
+                sketch_path = "/home/j/桌面/agent_design/clippasso_utils/CLIPasso/output_sketches/理想MEGA/理想MEGA_100strokes_seed0_best.png"
             
             print(f"草图路径: {sketch_path}")
 
@@ -189,4 +144,8 @@ async def execute_param_design_loop(task_description: str):
         print("达到最大迭代次数或未找到合适模型。")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description="Run closed-loop vehicle design workflow.")
+    parser.add_argument('--task', type=str, required=True, help='Initial task description (e.g., "Sporty SUV")', default="Design a sporty SUV with low drag coefficient")
+    args = parser.parse_args()
+    
+    asyncio.run(run_closed_loop(args.task))

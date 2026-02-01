@@ -13,7 +13,7 @@ class Config:
     # 模型配置
     MODEL_NAME = "deepseek-chat"
     MODEL_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-    MODEL_BASE_URL = "https://api.deepseek.com"
+    MODEL_BASE_URL = os.getenv("MODEL_BASE_URL")
     
     OPENAI_MODEL_NAME = "gpt-4o"
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

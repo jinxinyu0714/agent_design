@@ -5,13 +5,30 @@ from pathlib import Path
 from diffusers.utils import load_image
 from PIL import Image
 import numpy as np
-from controlnet_aux import PidiNetDetector, HEDdetector
+# from controlnet_aux import PidiNetDetector, HEDdetector
 from diffusers import (
     ControlNetModel,
     StableDiffusionControlNetPipeline,
     UniPCMultistepScheduler,
 )
 DEFAULT_PRPOMPT = "A sporty SUV in the 300-500k RMB price range with an aggressive exterior, powerful performance, and a tech-focused interior, luminous grille, hardcore off-road styling"
+
+_CACHED_PIPE = None
+
+def get_pipeline():
+    global _CACHED_PIPE
+    if _CACHED_PIPE is not None:
+        return _CACHED_PIPE
+        
+    checkpoint = "lllyasviel/control_v11p_sd15_scribble"
+    controlnet = ControlNetModel.from_pretrained(checkpoint, torch_dtype=torch.float16)
+    pipe = StableDiffusionControlNetPipeline.from_pretrained(
+        "runwayml/stable-diffusion-v1-5", controlnet=controlnet, torch_dtype=torch.float16
+    )
+    pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
+    pipe.enable_model_cpu_offload()
+    _CACHED_PIPE = pipe
+    return pipe
 
 def generate_rendering(image_path, prompt=DEFAULT_PRPOMPT, seed=0):
     """
@@ -23,22 +40,14 @@ def generate_rendering(image_path, prompt=DEFAULT_PRPOMPT, seed=0):
         output_control_image (str): Path to save the processed control image.
         output_image (str): Path to save the final generated image.
     """
-    checkpoint = "lllyasviel/control_v11p_sd15_scribble"
-
     # Load the input image
     control_image = load_image(image_path)
     # Apply the mask to the control image
     control_image = np.array(control_image)
     control_image = Image.fromarray(control_image)
 
-    # Load the ControlNet model
-    controlnet = ControlNetModel.from_pretrained(checkpoint, torch_dtype=torch.float16)
-    pipe = StableDiffusionControlNetPipeline.from_pretrained(
-        "runwayml/stable-diffusion-v1-5", controlnet=controlnet, torch_dtype=torch.float16
-    )
-
-    pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
-    pipe.enable_model_cpu_offload()
+    # Load the ControlNet model (Cached)
+    pipe = get_pipeline()
 
     # Generate the final image
     prompt = prompt
