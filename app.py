@@ -67,19 +67,16 @@ def save_uploaded_file(uploaded_file):
 async def run_competitor_analysis(task_description, status_container):
     status_container.write("🔍 正在进行竞品分析...")
     try:
-        # 这里假设 get_competitors 会打印或返回内容，我们需要捕获它或者让它运行
-        # 由于原函数主要通过 print 输出，且可能没有返回值，这里主要作为过程调用
-        # 在真实场景中，建议修改底层函数返回结构化数据
-        await get_competitors(task_description)
+        models = await get_competitors(task_description)
         status_container.write("✅ 竞品分析完成")
-        return [task_description] # 模拟返回模型列表
+        return models
     except Exception as e:
         status_container.error(f"竞品分析出错: {e}")
-        return [task_description]
+        return None
 
 async def run_sketch_generation(model_name, status_container):
     status_container.write(f"🎨 正在为 {model_name} 生成草图...")
-    sketch_task = f"Create a sketch for {model_name}"
+    sketch_task = f"创建一个关于{model_name}的汽车草图"
     try:
         sketch_path = await generate_sketch_agent(sketch_task)
         if sketch_path and os.path.exists(sketch_path):
@@ -87,7 +84,7 @@ async def run_sketch_generation(model_name, status_container):
             return sketch_path
         else:
             status_container.warning("⚠️ 草图生成未返回有效路径，使用默认示例。")
-            return "/home/j/桌面/agent_design/clippasso_utils/CLIPasso/output_sketches/理想MEGA/理想MEGA_100strokes_seed0_best.png"
+            return None
     except Exception as e:
         status_container.error(f"草图生成出错: {e}")
         return None
@@ -181,6 +178,20 @@ def main():
         
         # 2. 文件上传
         uploaded_file = st.file_uploader("上传图片或3D模型 (可选)", type=['png', 'jpg', 'jpeg', 'stl', 'obj'])
+
+        # --- FIX: 检测输入变化，重置状态 ---
+        # 生成当前输入的指纹，用于检测变化
+        current_input_id = f"{user_query}_{uploaded_file.name if uploaded_file else 'nofile'}_{uploaded_file.size if uploaded_file else 0}"
+        
+        if "last_input_id" not in st.session_state:
+            st.session_state.last_input_id = current_input_id
+            
+        if st.session_state.last_input_id != current_input_id:
+            # 输入发生变化，清除意图缓存，强制重新分析
+            if "intent_data" in st.session_state:
+                del st.session_state.intent_data
+            st.session_state.last_input_id = current_input_id
+        # ------------------------------------
         
         file_path = None
         has_file = False
@@ -256,17 +267,21 @@ def main():
                             st.image(sketch_path, caption=f"生成的草图: {model_name}")
                             # 使用子流程
                             success = execute_render_flow(sketch_path, final_prompt, status)
+                        else:
+                            status.error("草图生成失败，无法继续流程。") # 明确错误
 
                 # Case 2: 实车图 -> CD
                 elif intent == "PHOTO_TO_CD":
                     if not file_path:
-                        status.error("需上传文件")
+                        status.error("需上传文件") # 明确错误
                     else:
                         sketch_path = asyncio.run(run_photo_to_sketch(file_path, status))
                         if sketch_path:
                             st.image(sketch_path, caption="提取的线条草图")
                             # 继续后续流程
                             success = execute_render_flow(sketch_path, final_prompt, status)
+                        else:
+                             status.error("图片转线条失败")
 
                 # Case 3: 草图 -> CD
                 elif intent == "SKETCH_TO_CD":
@@ -280,12 +295,13 @@ def main():
                 # Case 4: 渲染图 -> CD
                 elif intent == "RENDER_TO_CD":
                     if not file_path:
-                        status.error("需上传文件")
+                         status.error("需上传文件")
                     else:
                         st.image(file_path, caption="上传的渲染图", width=300)
                         stl_path = run_3d_generation(file_path, status)
                         if stl_path:
                            success = display_3d_and_cd(stl_path, status)
+                        # 如果没有生成stl，run_3d_generation 内部应该报错了，这里 success 保持 False 即可
 
                 # Case 5: 3D模型 -> CD
                 elif intent == "MODEL_TO_CD":
@@ -296,10 +312,12 @@ def main():
                         if cd_res:
                             display_cd_result(cd_res)
                             success = True
+                        # 如果失败，run_cd_prediction 内部报错
 
                 if success:
                     status.update(label="✅ 任务执行完毕", state="complete", expanded=True)
                 else:
+                    # 只有在没有明确报错但流程未完成时才真正显示错误状态
                     status.update(label="❌ 任务执行中断或出错", state="error", expanded=True)
 
 # --- 辅助流程函数 ---
