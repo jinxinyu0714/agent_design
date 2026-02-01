@@ -9,7 +9,7 @@ from autogen_agentchat.ui import Console
 import re
 import ast
 
-DEFAULT_TASK = "创建一个关于['奥迪Q3']的草图"
+DEFAULT_TASK = "创建一个关于['奥迪A3']的草图"
 
 
 def ensure_directory_permissions(path):
@@ -34,8 +34,13 @@ async def main(task):
         # Ensure proper permissions before writing
         ensure_directory_permissions(sketch_path)
         return sketch_path
+<<<<<<< HEAD
     #return None
     print("/home/j/桌面/agent_design/clippasso_utils/CLIPasso/output_sketches/理想MEGA/理想MEGA_100strokes_seed0_best.png")
+=======
+    return None
+    # print("/home/j/桌面/agent_design/clippasso_utils/CLIPasso/output_sketches/理想MEGA/理想MEGA_100strokes_seed0_best.png")
+>>>>>>> 7d243459d83026a058dfe3b48f34d0e56bbdc4ce
 
 
 if __name__ == "__main__":
